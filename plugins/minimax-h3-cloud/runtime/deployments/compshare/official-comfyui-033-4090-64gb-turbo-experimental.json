@@ -1,0 +1,51 @@
+{
+  "id": "compshare-official-comfyui-033-4090-64gb-turbo-experimental",
+  "provider": "compshare",
+  "purpose": "formal-runtime-4090-64gb-turbo-experimental",
+  "verificationStatus": "unverified",
+  "runtimeSpec": "runtime-specs/minimax-h3-turbo-8step-comfyui-033-v1.json",
+  "image": {
+    "id": "compshareImage-1uiyk4t8fyce",
+    "source": "platform",
+    "name": "ComfyUI基础镜像纯净版0.33.0_5090"
+  },
+  "compute": {
+    "gpu": "4090",
+    "count": 1,
+    "cpu": 14,
+    "memoryGiB": 64,
+    "diskGiB": 100,
+    "diskType": "CLOUD_SSD",
+    "chargeType": "Postpay",
+    "cpuPlatform": "Auto"
+  },
+  "placementStrategy": "first-compatible",
+  "placementCandidates": [
+    {
+      "region": "cn-bj2",
+      "zone": "cn-bj2-03"
+    }
+  ],
+  "modelCache": {
+    "provider": "compshare-model-repository",
+    "sources": {
+      "base": {
+        "name": "MiniMax-H3",
+        "path": "/model/ModelScope/Comfy-Org/MiniMax-H3"
+      },
+      "turbo": {
+        "name": "Minimax-h3-Turbo",
+        "path": "/model/ModelScope/lightx2v/Minimax-h3-Turbo"
+      }
+    },
+    "targetRoot": "/root/ComfyUI/models",
+    "markerRoot": "/root/.cache/minimax-h3/runtime-prepared",
+    "copyToSystemDisk": false
+  },
+  "instanceName": "minimax-h3-turbo-4090-64gb-experimental",
+  "maximumHourlyPrice": 2.1,
+  "softwareName": "ComfyUI",
+  "safety": {
+    "scheduleStopAfter": "30m"
+  }
+}

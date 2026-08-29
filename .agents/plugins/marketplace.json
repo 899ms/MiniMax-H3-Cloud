@@ -1,0 +1,20 @@
+{
+  "name": "sac-y-minimax-h3",
+  "interface": {
+    "displayName": "Sac-Y MiniMax H3"
+  },
+  "plugins": [
+    {
+      "name": "minimax-h3-cloud",
+      "source": {
+        "source": "local",
+        "path": "./plugins/minimax-h3-cloud"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

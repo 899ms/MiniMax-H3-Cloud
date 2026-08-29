@@ -1,0 +1,13 @@
+{
+  "name": "minimax-h3-cloud",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "onboard": "node scripts/h3-onboard.mjs",
+    "h3": "node scripts/h3-comfy.mjs",
+    "cloud": "node scripts/h3-cloud.mjs",
+    "diagnose:transport": "node scripts/h3-transport-diagnose.mjs",
+    "provision": "node scripts/h3-provision.mjs",
+    "test": "node --test"
+  }
+}
