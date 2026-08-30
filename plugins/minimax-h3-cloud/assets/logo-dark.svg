@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" color="#F8FAFC" role="img" aria-labelledby="title desc">
+  <title id="title">MiniMax H3 Cloud</title>
+  <desc id="desc">Three stacked video frames with the MiniMax waveform, optimized for dark interfaces.</desc>
+  <defs>
+    <linearGradient id="brand" x1="28" y1="50" x2="78" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F52D83"/>
+      <stop offset="0.48" stop-color="#FF4A67"/>
+      <stop offset="1" stop-color="#FF765A"/>
+    </linearGradient>
+    <clipPath id="front-frame">
+      <rect x="22" y="30" width="68" height="48" rx="14"/>
+    </clipPath>
+  </defs>
+  <rect x="10" y="18" width="68" height="48" rx="14" fill="none" stroke="currentColor" stroke-width="3" opacity=".28"/>
+  <rect x="16" y="24" width="68" height="48" rx="14" fill="none" stroke="currentColor" stroke-width="3.4" opacity=".56"/>
+  <rect x="22" y="30" width="68" height="48" rx="14" fill="#111827" stroke="currentColor" stroke-width="4"/>
+  <g clip-path="url(#front-frame)" fill="none" stroke="url(#brand)" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M31 52v5c0 5 7 5 7 0V46c0-5 7-5 7 0v20c0 5 7 5 7 0V39c0-5 7-5 7 0v18"/>
+    <path d="M59 57V39c0-5 7-5 7 0v27c0 5 7 5 7 0V49c0-5 7-5 7 0v8"/>
+  </g>
+</svg>

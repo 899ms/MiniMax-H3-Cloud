@@ -1,4 +1,14 @@
-# MiniMax H3 Cloud for Codex
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="plugins/minimax-h3-cloud/assets/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="plugins/minimax-h3-cloud/assets/logo.svg">
+    <img src="plugins/minimax-h3-cloud/assets/logo.svg" width="136" alt="MiniMax H3 Cloud Logo">
+  </picture>
+</p>
+
+<h1 align="center">MiniMax H3 Cloud for Codex</h1>
+
+<p align="center">云端 GPU 驱动的 MiniMax H3 视频生成插件</p>
 
 在 Codex 中使用云端 GPU 生成 MiniMax H3 视频（暂时支持优云智算平台，后续会新增其他平台）。插件负责选择算力、创建或启动实例、准备 ComfyUI Runtime、提交工作流、下载 MP4，并在任务完成或失败后关机。
 
