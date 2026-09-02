@@ -1,0 +1,11 @@
+* text=auto
+
+.gitattributes text eol=lf
+*.cmd text eol=crlf
+*.mjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+plugins/minimax-h3-cloud/scripts/h3-cloud text eol=lf
+plugins/minimax-h3-cloud/scripts/h3-onboard text eol=lf
+plugins/minimax-h3-cloud/scripts/h3-provision text eol=lf

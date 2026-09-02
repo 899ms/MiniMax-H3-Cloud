@@ -5,7 +5,7 @@ description: 使用可替换的云端 GPU Runtime Profile 生成 MiniMax H3 视�
 
 # MiniMax H3 云端视频
 
-通过插件根目录的 `scripts/h3-cloud` 调用已验证的本地编排器。相对本文件的位置是 `../../scripts/h3-cloud`；执行前把它解析为绝对路径。
+通过插件根目录的平台入口调用已验证的本地编排器。Windows 使用 `scripts/h3-cloud.cmd`、`scripts/h3-onboard.cmd` 和 `scripts/h3-provision.cmd`；macOS/Linux 使用同名无扩展名脚本。相对本文件的位置都是 `../../scripts/`；执行前根据当前操作系统选择入口并解析为绝对路径。下文的 `scripts/h3-*` 均表示已经解析好的对应平台入口，不要在 Windows 上调用 `/bin/sh` 或 WSL 代跑。
 
 ## 运行原则
 
@@ -67,7 +67,7 @@ MP 是总像素量，P 是画面高度，两者会随画幅变化。以下只用
 2. 如果本机尚无隔离凭证配置，让用户自行在终端运行 `compshare config set --name <隔离名称> --no-activate`，通过官方隐藏输入录入 API Key。插件不得读取或回显密钥。提醒用户不要把 API Key 发到对话中，并请他完成后只回复“已完成”；随后立即结束当前回合。这个结束点是硬性边界，不得继续展示 GPU 配置页、生成模式、参数示例、费用说明或索要提示词。下一回合先验证凭证，成功时只简短报告“优云智算已连接”，再进入第 3 步。
 3. 凭证成功后运行 `scripts/h3-onboard options --platform compshare --credential-profile <隔离名称>`。优先使用 `request_user_input` 向用户展示一个 GPU 单选题，三个返回项按原顺序作为三个选项；选项描述合并 `priceDisplay`、`reason` 和必要的 `caveat`，不预选。如果客户端自动提供“其他”，明确告诉用户可用它提出配置需求或查看更多；没有该工具时才退化为编号列表，并增加“更多配置”。同时附上[优云 GPU 配置页](https://console.compshare.cn/light-gpu/console/resources)。`priceSource=reference` 时必须说明是历史参考价，创建前仍会刷新。
 4. 用户选择“其他/更多”或提出其他需求时，运行 `scripts/h3-onboard options --platform compshare --all --credential-profile <隔离名称>`，展示当前有库存的单卡规格和实时报价。列表只代表平台当前可售，不代表 MiniMax H3 已验证。
-5. 用户明确选择后，运行 `scripts/h3-onboard init --platform compshare --resource-option <配置ID> --credential-profile <隔离名称>`。默认配置位于 `~/.config/minimax-h3-cloud/config.json`；如果该路径已经存在，先读取并确认是否复用，不得覆盖。该命令不接收 API Key，也不会保存已有实例 ID。
+5. 用户明确选择后，运行 `scripts/h3-onboard init --platform compshare --resource-option <配置ID> --credential-profile <隔离名称>`。Windows 默认配置位于 `%APPDATA%\minimax-h3-cloud\config.json`，macOS/Linux 位于 `~/.config/minimax-h3-cloud/config.json`；如果该路径已经存在，先读取并确认是否复用，不得覆盖。该命令不接收 API Key，也不会保存已有实例 ID。
 6. 对隔离配置运行 `scripts/h3-provision plan --config <隔离配置路径>`，内部检查所选规格的区域、镜像、缓存、库存和实时价格。不得切换到另一项配置；库存不足时回到第 3 步。生成前面向用户的确认只包含视频模式、画幅、时长、清晰度和预计本次费用，不展示镜像、缓存或内部证据状态。得到用户确认后再运行 `scripts/h3-provision create --yes --config <隔离配置路径>`。创建成功会自动保存新实例 ID。
 7. 已有配置时先运行 `scripts/h3-cloud status --config <配置路径>`。不得在全新用户验收中使用开发者默认配置、已有 credential profile 或已有实例 ID。
 8. 用户准备提示词时，提醒他写明画幅、时长和清晰度，并按“视频参数”一节解析。三项齐全时直接继续；缺项时只询问缺少项。将画面提示词写入一个临时 UTF-8 文本文件，再传给 `--prompt-file`；不要把画幅、时长和清晰度混入工作流的画面提示词，也不要修改基线工作流文件。

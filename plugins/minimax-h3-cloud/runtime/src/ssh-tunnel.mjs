@@ -1,8 +1,10 @@
 import { spawn } from "node:child_process";
 import { createServer, connect } from "node:net";
 import { homedir, tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { resolveCompShareAskpassPath } from "./compshare-cli.mjs";
+import { resolveUserStateDir } from "./user-paths.mjs";
 
 const delay = (milliseconds) =>
   new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
@@ -12,8 +14,12 @@ export function parseSshLoginCommand(command) {
     throw new Error("优云没有返回 SSH 登录命令");
   }
 
-  const tokens = command.trim().split(/\s+/);
-  if (tokens[0]?.split("/").pop() !== "ssh") {
+  const tokens = command
+    .trim()
+    .match(/"[^"]*"|'[^']*'|\S+/g)
+    ?.map((token) => token.replace(/^(?:"([^"]*)"|'([^']*)')$/u, "$1$2"));
+  const executable = tokens?.[0]?.split(/[\\/]/).pop()?.toLowerCase();
+  if (!tokens || !["ssh", "ssh.exe"].includes(executable)) {
     throw new Error("优云返回了无法识别的 SSH 登录命令");
   }
 
@@ -41,6 +47,16 @@ export function parseSshLoginCommand(command) {
   }
 
   return { user, host, port };
+}
+
+export function resolveSshPath({
+  env = process.env,
+  platform = process.platform,
+} = {}) {
+  return (
+    env.MINIMAX_H3_SSH_PATH?.trim() ||
+    (platform === "win32" ? "ssh.exe" : "ssh")
+  );
 }
 
 export function decodeCompSharePassword(value) {
@@ -141,6 +157,59 @@ function waitForExit(child, timeoutMs) {
   ]);
 }
 
+export async function createAskpassContext({
+  password,
+  env = process.env,
+  platform = process.platform,
+  temporaryRoot = tmpdir(),
+} = {}) {
+  const directory = await mkdtemp(join(temporaryRoot, "minimax-h3-askpass-"));
+  const passwordPath = join(directory, "password");
+  await writeFile(passwordPath, password, {
+    encoding: "utf8",
+    flag: "wx",
+    mode: 0o600,
+  });
+
+  if (platform === "win32") {
+    const askpassPath = resolveCompShareAskpassPath({ env, platform });
+    if (!askpassPath) {
+      await rm(directory, { recursive: true, force: true });
+      throw new Error(
+        "找不到 compshare-ssh-askpass.exe；请重新安装 CompShare CLI，或设置 MINIMAX_H3_SSH_ASKPASS_PATH。",
+      );
+    }
+    return {
+      directory,
+      path: askpassPath,
+      environment: {
+        COMPSHARE_INTERNAL_SSH_PASSWORD_FILE: passwordPath,
+      },
+    };
+  }
+
+  const askpassPath = join(directory, "askpass.sh");
+  await writeFile(
+    askpassPath,
+    [
+      "#!/bin/sh",
+      'test -n "$MINIMAX_H3_SSH_PASSWORD_FILE" || exit 1',
+      'cat -- "$MINIMAX_H3_SSH_PASSWORD_FILE"',
+      "printf '\\n'",
+      'rm -f -- "$MINIMAX_H3_SSH_PASSWORD_FILE"',
+      "",
+    ].join("\n"),
+    { mode: 0o700 },
+  );
+  return {
+    directory,
+    path: askpassPath,
+    environment: {
+      MINIMAX_H3_SSH_PASSWORD_FILE: passwordPath,
+    },
+  };
+}
+
 export async function openSshTunnel({
   user,
   host,
@@ -152,13 +221,16 @@ export async function openSshTunnel({
   localHost = "127.0.0.1",
   localPort,
   connectTimeoutMs = 30_000,
-  sshPath = "/usr/bin/ssh",
+  sshPath,
   knownHostsPath,
+  env = process.env,
+  home = homedir(),
+  platform = process.platform,
 } = {}) {
   if (!user || !host || !password || !resourceId) {
     throw new Error("SSH 隧道缺少连接信息");
   }
-  if (password.includes("\0") || password.includes("\n")) {
+  if (password.includes("\0") || password.includes("\n") || password.includes("\r")) {
     throw new Error("SSH 密码包含不支持的字符");
   }
 
@@ -166,19 +238,17 @@ export async function openSshTunnel({
   const safeResourceId = resourceId.replace(/[^A-Za-z0-9._-]/g, "_");
   const selectedKnownHostsPath =
     knownHostsPath ??
-    join(homedir(), ".local", "state", "minimax-h3-cloud", "known-hosts", safeResourceId);
-  await mkdir(join(selectedKnownHostsPath, ".."), {
+    join(
+      resolveUserStateDir({ env, home, platform }),
+      "known-hosts",
+      safeResourceId,
+    );
+  await mkdir(dirname(selectedKnownHostsPath), {
     recursive: true,
     mode: 0o700,
   });
 
-  const askpassDir = await mkdtemp(join(tmpdir(), "minimax-h3-askpass-"));
-  const askpassPath = join(askpassDir, "askpass.sh");
-  await writeFile(
-    askpassPath,
-    '#!/bin/sh\nprintf "%s\\n" "$MINIMAX_H3_SSH_PASSWORD"\n',
-    { mode: 0o700 },
-  );
+  const askpass = await createAskpassContext({ password, env, platform });
 
   const args = buildSshTunnelArgs({
     user,
@@ -190,13 +260,13 @@ export async function openSshTunnel({
     remotePort,
     knownHostsPath: selectedKnownHostsPath,
   });
-  const child = spawn(sshPath, args, {
+  const child = spawn(sshPath ?? resolveSshPath({ env, platform }), args, {
     env: {
-      ...process.env,
-      DISPLAY: process.env.DISPLAY || "minimax-h3-cloud",
-      SSH_ASKPASS: askpassPath,
+      ...env,
+      ...askpass.environment,
+      DISPLAY: env.DISPLAY || "minimax-h3-cloud",
+      SSH_ASKPASS: askpass.path,
       SSH_ASKPASS_REQUIRE: "force",
-      MINIMAX_H3_SSH_PASSWORD: password,
     },
     stdio: ["ignore", "ignore", "pipe"],
   });
@@ -215,13 +285,13 @@ export async function openSshTunnel({
     if (closed) return;
     closed = true;
     if (child.exitCode === null && child.signalCode === null) {
-      child.kill("SIGTERM");
+      child.kill(platform === "win32" ? undefined : "SIGTERM");
       if (!(await waitForExit(child, 2_000))) {
-        child.kill("SIGKILL");
+        child.kill(platform === "win32" ? undefined : "SIGKILL");
         await waitForExit(child, 1_000);
       }
     }
-    await rm(askpassDir, { recursive: true, force: true });
+    await rm(askpass.directory, { recursive: true, force: true });
   };
 
   try {

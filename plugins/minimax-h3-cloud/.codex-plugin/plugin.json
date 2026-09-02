@@ -1,6 +1,6 @@
 {
   "name": "minimax-h3-cloud",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "\u4ece Codex \u8c03\u7528\u53ef\u66ff\u6362\u7684\u4e91\u7aef GPU \u73af\u5883\u751f\u6210 MiniMax H3 \u89c6\u9891\uff0c\u5e76\u81ea\u52a8\u56de\u6536\u7b97\u529b\u3002",
   "author": {
     "name": "Sac-Y",
@@ -13,7 +13,8 @@
     "minimax-h3",
     "video",
     "comfyui",
-    "gpu"
+    "gpu",
+    "windows"
   ],
   "skills": "./skills/",
   "interface": {
@@ -32,7 +33,8 @@
       "Keyframe image-to-video",
       "1\u20139 reference-images-to-video",
       "Prompt recovery without duplicate submission",
-      "Cloud GPU lifecycle"
+      "Cloud GPU lifecycle",
+      "Native Windows, macOS, and Linux launchers"
     ],
     "defaultPrompt": [
       "\u751f\u6210\u4e00\u6bb5 MiniMax H3 \u89c6\u9891\uff1a16:9 \u6a2a\u5c4f\uff0c5 \u79d2\uff0c0.4MP\uff08\u7ea6 480P\uff09\u3002",
