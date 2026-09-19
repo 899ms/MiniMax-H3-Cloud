@@ -26,16 +26,29 @@
 - 优云智算账号和 API Key；
 - [CompShare CLI](https://github.com/compshare-cn/compshare-cli) 0.3.5 或更高版本。
 
-可以通过 PyPI 安装 CompShare CLI：
+macOS / Linux 可通过 PyPI 安装 CompShare CLI：
 
 ```bash
+python3 -m pip install --upgrade compshare-cli
+compshare --version
+```
+
+Windows 请在 PowerShell 中运行：
+
+```powershell
 python -m pip install --upgrade compshare-cli
 compshare --version
 ```
 
-如果当前 CompShare CLI 版本因 Typer/Click 依赖组合而无法启动，可使用已验证的兼容版本：
+如果当前 CompShare CLI 版本因 Typer/Click 依赖组合而无法启动，可使用已验证的兼容版本。macOS / Linux：
 
 ```bash
+python3 -m pip install --upgrade compshare-cli "typer==0.20.1" "click==8.2.1"
+```
+
+Windows：
+
+```powershell
 python -m pip install --upgrade compshare-cli "typer==0.20.1" "click==8.2.1"
 ```
 

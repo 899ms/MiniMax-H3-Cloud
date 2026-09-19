@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import {
   CompShareCliError,
+  resolveCompShareAskpassPath,
   resolveCompShareCliPath,
   runCompShareCli,
 } from "../src/compshare-cli.mjs";
@@ -14,6 +18,31 @@ test("CompShare CLI executable can be overridden on every platform", () => {
     }),
     "D:\\Tools\\compshare.exe",
   );
+});
+
+test("CompShare askpass override must point to a file", async () => {
+  const root = await mkdtemp(join(tmpdir(), "minimax-h3-test-"));
+  const helper = join(root, "compshare-ssh-askpass.exe");
+  try {
+    assert.equal(
+      resolveCompShareAskpassPath({
+        env: { MINIMAX_H3_SSH_ASKPASS_PATH: root },
+        platform: "win32",
+      }),
+      undefined,
+    );
+
+    await writeFile(helper, "test", "utf8");
+    assert.equal(
+      resolveCompShareAskpassPath({
+        env: { MINIMAX_H3_SSH_ASKPASS_PATH: helper },
+        platform: "win32",
+      }),
+      helper,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("CompShare CLI accepts UTF-8 BOM JSON on Windows", async () => {

@@ -4,6 +4,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { resolveCompShareAskpassPath } from "./compshare-cli.mjs";
+import { environmentValue } from "./executable-paths.mjs";
 import { resolveUserStateDir } from "./user-paths.mjs";
 
 const delay = (milliseconds) =>
@@ -55,7 +56,7 @@ export function resolveSshPath({
 } = {}) {
   return (
     env.MINIMAX_H3_SSH_PATH?.trim() ||
-    (platform === "win32" ? "ssh.exe" : "ssh")
+    (platform === "win32" ? "ssh.exe" : "/usr/bin/ssh")
   );
 }
 
@@ -172,11 +173,17 @@ export async function createAskpassContext({
   });
 
   if (platform === "win32") {
+    const configuredAskpassPath = environmentValue(
+      env,
+      "MINIMAX_H3_SSH_ASKPASS_PATH",
+    )?.trim();
     const askpassPath = resolveCompShareAskpassPath({ env, platform });
     if (!askpassPath) {
       await rm(directory, { recursive: true, force: true });
       throw new Error(
-        "找不到 compshare-ssh-askpass.exe；请重新安装 CompShare CLI，或设置 MINIMAX_H3_SSH_ASKPASS_PATH。",
+        configuredAskpassPath
+          ? `MINIMAX_H3_SSH_ASKPASS_PATH 指向的文件不存在：${configuredAskpassPath}`
+          : "找不到 compshare-ssh-askpass.exe；请重新安装 CompShare CLI，或设置 MINIMAX_H3_SSH_ASKPASS_PATH。",
       );
     }
     return {

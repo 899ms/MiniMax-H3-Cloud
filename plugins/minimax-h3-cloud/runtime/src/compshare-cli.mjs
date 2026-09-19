@@ -57,7 +57,7 @@ export function resolveCompShareAskpassPath({
     env,
     "MINIMAX_H3_SSH_ASKPASS_PATH",
   )?.trim();
-  if (override) return override;
+  if (override) return findExecutableOnPath(override, { env, platform });
 
   const command =
     platform === "win32"

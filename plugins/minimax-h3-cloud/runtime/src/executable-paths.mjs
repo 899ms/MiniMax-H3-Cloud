@@ -1,5 +1,13 @@
-import { existsSync } from "node:fs";
+import { statSync } from "node:fs";
 import { delimiter, extname, isAbsolute, join } from "node:path";
+
+function isFile(path) {
+  try {
+    return statSync(path).isFile();
+  } catch {
+    return false;
+  }
+}
 
 export function environmentValue(env, name) {
   if (env[name] !== undefined) return env[name];
@@ -15,7 +23,7 @@ export function findExecutableOnPath(
 ) {
   if (!command?.trim()) return undefined;
   if (isAbsolute(command) || /[\\/]/.test(command)) {
-    return existsSync(command) ? command : undefined;
+    return isFile(command) ? command : undefined;
   }
 
   const pathValue = environmentValue(env, "PATH");
@@ -30,7 +38,7 @@ export function findExecutableOnPath(
   for (const directory of pathValue.split(delimiter).filter(Boolean)) {
     for (const suffix of suffixes) {
       const candidate = join(directory.replace(/^"|"$/g, ""), `${command}${suffix}`);
-      if (existsSync(candidate)) return candidate;
+      if (isFile(candidate)) return candidate;
     }
   }
   return undefined;

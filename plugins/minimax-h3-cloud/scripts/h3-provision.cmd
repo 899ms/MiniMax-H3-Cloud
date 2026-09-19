@@ -15,5 +15,11 @@ if errorlevel 1 (
   exit /b 1
 )
 
-node "%PROJECT_DIR%\scripts\h3-provision.mjs" %*
+node.exe -e "process.exit(Number(process.versions.node.split('.')[0]) >= 20 ? 0 : 1)" >nul 2>nul
+if errorlevel 1 (
+  echo Node.js 20 or newer is required. 1>&2
+  exit /b 1
+)
+
+node.exe "%PROJECT_DIR%\scripts\h3-provision.mjs" %*
 exit /b %ERRORLEVEL%

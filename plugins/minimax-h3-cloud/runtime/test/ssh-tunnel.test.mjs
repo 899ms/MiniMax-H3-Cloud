@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -27,7 +27,8 @@ test("SSH login parser accepts Windows OpenSSH paths", () => {
 
 test("SSH defaults are platform aware and overridable", () => {
   assert.equal(resolveSshPath({ env: {}, platform: "win32" }), "ssh.exe");
-  assert.equal(resolveSshPath({ env: {}, platform: "linux" }), "ssh");
+  assert.equal(resolveSshPath({ env: {}, platform: "linux" }), "/usr/bin/ssh");
+  assert.equal(resolveSshPath({ env: {}, platform: "darwin" }), "/usr/bin/ssh");
   assert.equal(
     resolveSshPath({
       env: { MINIMAX_H3_SSH_PATH: "D:\\OpenSSH\\ssh.exe" },
@@ -35,6 +36,27 @@ test("SSH defaults are platform aware and overridable", () => {
     }),
     "D:\\OpenSSH\\ssh.exe",
   );
+});
+
+test("missing Windows askpass override fails with its configured path", async () => {
+  const root = await mkdtemp(join(tmpdir(), "minimax-h3-test-"));
+  const missingPath = join(root, "missing-askpass.exe");
+  try {
+    await assert.rejects(
+      createAskpassContext({
+        password: "secret",
+        env: { MINIMAX_H3_SSH_ASKPASS_PATH: missingPath },
+        platform: "win32",
+        temporaryRoot: root,
+      }),
+      (error) =>
+        error.message.includes("MINIMAX_H3_SSH_ASKPASS_PATH") &&
+        error.message.includes(missingPath),
+    );
+    assert.deepEqual(await readdir(root), []);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("SSH tunnel arguments use a dedicated known-hosts file", () => {
