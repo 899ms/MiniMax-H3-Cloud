@@ -19,17 +19,44 @@
 
 ## 前置条件
 
-- macOS 或 Linux；
+- Windows 10/11、macOS 或 Linux；
 - 支持插件的 Codex；
 - Node.js 20 或更高版本；
 - `ssh` 和 `ffprobe`；
 - 优云智算账号和 API Key；
 - [CompShare CLI](https://github.com/compshare-cn/compshare-cli) 0.3.5 或更高版本。
 
-可以通过 PyPI 安装 CompShare CLI：
+macOS / Linux 可通过 PyPI 安装 CompShare CLI：
 
 ```bash
 python3 -m pip install --upgrade compshare-cli
+compshare --version
+```
+
+Windows 请在 PowerShell 中运行：
+
+```powershell
+python -m pip install --upgrade compshare-cli
+compshare --version
+```
+
+如果当前 CompShare CLI 版本因 Typer/Click 依赖组合而无法启动，可使用已验证的兼容版本。macOS / Linux：
+
+```bash
+python3 -m pip install --upgrade compshare-cli "typer==0.20.1" "click==8.2.1"
+```
+
+Windows：
+
+```powershell
+python -m pip install --upgrade compshare-cli "typer==0.20.1" "click==8.2.1"
+```
+
+Windows 还需要启用系统的 OpenSSH Client，并确保 `ssh.exe`、`ffprobe.exe`、`node.exe`、`compshare.exe` 及 `compshare-ssh-askpass.exe` 可从 `PATH` 找到。可以在 PowerShell 中检查：
+
+```powershell
+Get-Command node, ssh, ffprobe, compshare, compshare-ssh-askpass
+node --version
 compshare --version
 ```
 
@@ -50,7 +77,14 @@ codex plugin add minimax-h3-cloud@sac-y-minimax-h3
 4. 确认视频参数与预计费用；
 5. 自动生成、在 Codex 中播放并提供 MP4 下载。
 
-插件不会要求把 API Key 发到对话中。凭证由 CompShare CLI 保存在用户本机；插件配置默认写入 `~/.config/minimax-h3-cloud/config.json`，视频默认写入 `~/.local/share/minimax-h3-cloud/outputs/`。这两个位置都在插件安装目录之外，升级插件不会覆盖用户数据。
+插件不会要求把 API Key 发到对话中。凭证由 CompShare CLI 保存在用户本机；配置和视频都位于插件安装目录之外，升级插件不会覆盖用户数据。
+
+| 系统 | 默认配置 | 默认视频目录 |
+|---|---|---|
+| Windows | `%APPDATA%\minimax-h3-cloud\config.json` | `%LOCALAPPDATA%\minimax-h3-cloud\outputs\` |
+| macOS / Linux | `~/.config/minimax-h3-cloud/config.json` | `~/.local/share/minimax-h3-cloud/outputs/` |
+
+Windows 原生入口为 `scripts\h3-onboard.cmd`、`scripts\h3-provision.cmd` 和 `scripts\h3-cloud.cmd`；macOS/Linux 继续使用同名无扩展名脚本。高级用户可通过 `COMPSHARE_CLI_PATH`、`MINIMAX_H3_SSH_PATH` 和 `MINIMAX_H3_SSH_ASKPASS_PATH` 指定自定义可执行文件路径。
 
 ## 费用与资源
 

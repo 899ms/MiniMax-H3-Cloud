@@ -1,5 +1,10 @@
 import { execFile } from "node:child_process";
+import { dirname, join } from "node:path";
 import { promisify } from "node:util";
+import {
+  environmentValue,
+  findExecutableOnPath,
+} from "./executable-paths.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -14,7 +19,7 @@ export class CompShareCliError extends Error {
 function parseEnvelope(stdout) {
   let envelope;
   try {
-    envelope = JSON.parse(stdout);
+    envelope = JSON.parse(String(stdout).replace(/^\uFEFF/u, ""));
   } catch {
     throw new CompShareCliError("compshare-cli 没有返回有效 JSON", {
       code: "COMPSHARE_INVALID_JSON",
@@ -34,10 +39,55 @@ function parseEnvelope(stdout) {
   return envelope.data;
 }
 
-export async function runCompShareCli(args, { timeoutMs = 620_000 } = {}) {
+export function resolveCompShareCliPath({
+  env = process.env,
+  platform = process.platform,
+} = {}) {
+  const override = environmentValue(env, "COMPSHARE_CLI_PATH")?.trim();
+  if (override) return override;
+  const command = platform === "win32" ? "compshare.exe" : "compshare";
+  return findExecutableOnPath(command, { env, platform }) ?? command;
+}
+
+export function resolveCompShareAskpassPath({
+  env = process.env,
+  platform = process.platform,
+} = {}) {
+  const override = environmentValue(
+    env,
+    "MINIMAX_H3_SSH_ASKPASS_PATH",
+  )?.trim();
+  if (override) return findExecutableOnPath(override, { env, platform });
+
+  const command =
+    platform === "win32"
+      ? "compshare-ssh-askpass.exe"
+      : "compshare-ssh-askpass";
+  const located = findExecutableOnPath(command, { env, platform });
+  if (located) return located;
+
+  const cliPath = resolveCompShareCliPath({ env, platform });
+  if (/[\\/]/.test(cliPath)) {
+    const sibling = join(dirname(cliPath), command);
+    return findExecutableOnPath(sibling, { env, platform });
+  }
+  return undefined;
+}
+
+export async function runCompShareCli(
+  args,
+  {
+    timeoutMs = 620_000,
+    env = process.env,
+    platform = process.platform,
+    executable = resolveCompShareCliPath({ env, platform }),
+    execFileImpl = execFileAsync,
+  } = {},
+) {
   try {
-    const { stdout } = await execFileAsync("compshare", args, {
+    const { stdout } = await execFileImpl(executable, args, {
       encoding: "utf8",
+      env,
       maxBuffer: 4 * 1024 * 1024,
       timeout: timeoutMs,
     });
@@ -49,8 +99,14 @@ export async function runCompShareCli(args, { timeoutMs = 620_000 } = {}) {
       return parseEnvelope(error.stdout);
     }
 
-    throw new CompShareCliError(error?.message ?? String(error), {
-      code: error?.code ?? "COMPSHARE_PROCESS_ERROR",
-    });
+    const missing = error?.code === "ENOENT";
+    throw new CompShareCliError(
+      missing
+        ? `找不到 CompShare CLI：${executable}。请安装 compshare-cli 并确认其 Scripts/bin 目录已加入 PATH，或设置 COMPSHARE_CLI_PATH。`
+        : error?.message ?? String(error),
+      {
+        code: missing ? "COMPSHARE_CLI_NOT_FOUND" : error?.code ?? "COMPSHARE_PROCESS_ERROR",
+      },
+    );
   }
 }
